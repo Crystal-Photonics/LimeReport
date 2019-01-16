@@ -10,7 +10,7 @@ contains(CONFIG,zint){
 }
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-    QT += uitools
+    #QT += uitools
 }
 lessThan(QT_MAJOR_VERSION, 5){
     CONFIG += uitools
