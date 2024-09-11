@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -55,7 +55,6 @@ ShapeItem::ShapeItem(QObject *owner, QGraphicsItem *parent)
       m_shapeBrushType(Qt::NoBrush),
       m_lineWidth(1),
       m_penStyle(Qt::SolidLine),
-      m_opacity(100),
       m_cornerRadius(0)
 {
 }
@@ -83,12 +82,18 @@ void ShapeItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     QPen pen(m_shapeColor);
     pen.setWidthF(m_lineWidth);
     pen.setStyle(m_penStyle);
+    pen.setJoinStyle(Qt::MiterJoin);
     painter->setPen(pen);
     QBrush brush(m_shapeBrushColor,m_shapeBrushType);
     brush.setTransform(painter->worldTransform().inverted());
     painter->setBrush(brush);
     painter->setBackground(QBrush(Qt::NoBrush));
-    painter->setOpacity(qreal(m_opacity)/100);
+    painter->setOpacity(qreal(opacity())/100);
+
+    QRectF rectangleRect = rect().adjusted((lineWidth() / 2),
+                                           (lineWidth() / 2),
+                                           -(lineWidth() / 2),
+                                           -(lineWidth() / 2));
 
     switch (m_shape){
     case HorizontalLine:
@@ -102,14 +107,15 @@ void ShapeItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
         painter->drawEllipse(rect());
         break;
     case Rectangle:
-        if (m_cornerRadius!=0){
+        if (m_cornerRadius != 0){
             painter->setRenderHint(QPainter::Antialiasing);
-            painter->drawRoundedRect(rect(),m_cornerRadius,m_cornerRadius);
+            painter->drawRoundedRect(rectangleRect,m_cornerRadius,m_cornerRadius);
         } else {
-            painter->drawRect(rect());
+            painter->drawRect(rectangleRect);
         }
         break;
     }
+
     painter->restore();
     ItemDesignIntf::paint(painter,option,widget);
 
@@ -185,27 +191,5 @@ void ShapeItem::setCornerRadius(int borderRadius)
         notify("cornerRadius",oldValue,m_cornerRadius);
     }
 }
-int ShapeItem::opacity() const
-{
-    return m_opacity;
-}
-
-void ShapeItem::setOpacity(int opacity)
-{
-    if (m_opacity!=opacity){
-        if (opacity < 0) {
-            m_opacity = 0;
-        }
-        else if (opacity > 100) {
-            m_opacity = 100;
-        }
-        else {
-            m_opacity =  opacity;
-        }
-        update();
-    }
-}
-
-
 
 }

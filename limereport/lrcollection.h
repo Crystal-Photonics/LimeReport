@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -35,7 +35,7 @@
 
 #include "lrglobal.h"
 
-class ACollectionProperty{
+class LIMEREPORT_EXPORT ACollectionProperty{
 public:
     ACollectionProperty(){}
     ACollectionProperty(const ACollectionProperty& ){}
@@ -44,9 +44,12 @@ public:
 Q_DECLARE_METATYPE(ACollectionProperty)
 
 namespace LimeReport{
-
-const int VARIABLE_IS_NOT_USED COLLECTION_TYPE_ID = qMetaTypeId<ACollectionProperty>();
-class ICollectionContainer{
+#if __cplusplus >= 201703L
+const int inline COLLECTION_TYPE_ID = qMetaTypeId<ACollectionProperty>();
+#else
+const int COLLECTION_TYPE_ID = qMetaTypeId<ACollectionProperty>();
+#endif
+class LIMEREPORT_EXPORT ICollectionContainer{
 public:
     virtual QObject* createElement(const QString& collectionName,const QString& elementType)=0;
     virtual int elementsCount(const QString& collectionName)=0;

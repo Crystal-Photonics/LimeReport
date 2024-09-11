@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -33,6 +33,7 @@
 #include <stdexcept>
 #include <QString>
 #include <QStyleOptionViewItem>
+#include <QtGlobal>
 
 #if defined(LIMEREPORT_EXPORTS)
 #  define LIMEREPORT_EXPORT Q_DECL_EXPORT
@@ -50,10 +51,14 @@ namespace LimeReport {
 #define VARIABLE_IS_NOT_USED
 #endif
 
+#if QT_VERSION >= 0x050800
+Q_NAMESPACE
+#endif
 
 namespace Const{
-    int const RESIZE_HANDLE_SIZE = 10;
-    int const SELECTION_PEN_SIZE = 4;
+    int const DEFAULT_GRID_STEP = 1;
+    int const RESIZE_HANDLE_SIZE = 5;
+    int const SELECTION_PEN_SIZE = 1;
     int const MINIMUM_ITEM_WIDTH = 2*RESIZE_HANDLE_SIZE;
     int const MINIMUM_ITEM_HEIGHT = 2*RESIZE_HANDLE_SIZE;
     double const RESIZE_ZONE_OPACITY = 0.5;
@@ -75,34 +80,41 @@ namespace Const{
     const qreal BAND_NAME_TEXT_OPACITY = 0.6;
     const qreal SELECTION_OPACITY = 0.3;
     const QString FIELD_RX = "\\$D\\s*\\{\\s*([^{}]*)\\s*\\}";
-    const QString VARIABLE_RX = "\\$V\\s*\\{\\s*([^{}]*)\\s*\\}";
-    const QString NAMED_VARIABLE_RX = "\\$V\\s*\\{\\s*(%1)\\s*\\}";
-    const QString SCRIPT_RX = "\\$S\\s*\\{(.*)\\}";
-
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(((?:\\\"?\\$D\\s*\\{\\s*)|(?:\\\"?\\$V\\s*\\{\\s*)|(?:\\\"))(\\w+\\.?\\w+)((?:\\\")|(?:\\s*\\}\\\"?\\s*)))\\s*,\\s*\\\"(\\w+)\\\"\\s*\\)";
-    //const int DATASOURCE_INDEX = 6;
-    //const int VALUE_INDEX = 2;
-
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(?:(?:((?:(?:\\\"?\\$D\\s*\\{\\s*)|(?:\\\"?\\$V\\s*\\{\\s*)|(?:\\\"?\\$S\\s*\\{\\s*)|(?:\\\"))((?:\\w+\\.?\\w+)|(?:\\w+))(?:(?:\\\")|(?:\\s*\\}\\\"?\\s*)))\\s*,)|(?:))\\s*\\\"(\\w+)\\\"\\s*\\)";
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\((?:(.+),(.+))|(?:\\\"(\\w+)\\\")\\)";
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(?:(?:(?:(?:\\\")|(?:))(\\w+)(?:(?:\\\")|(?:)))|(?:(?:(?:\\\")|(?:))(\\s*\\$\\w\\s*\\{.+\\}\\s*)(?:(?:\\\")|(?:))\\s*,\\s*(?:(?:\\\")|(?:))(\\w+)(?:(?:\\\")|(?:))))\\)";
-    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*.\\w*\\s*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))\\)";
-    const int DATASOURCE_INDEX = 3;//4;
-    const int VALUE_INDEX = 2; //2;
-    const int EXPRESSION_ARGUMENT_INDEX = 1;//3;
+    const QString VARIABLE_RX = "\\$V\\s*\\{\\s*(?:([^\\{\\},]*)|(?:([^\\{\\}]*)\\s*,\\s*([^\\{\\}]*)))\\s*\\}";
+    const QString NAMED_VARIABLE_RX = "\\$V\\s*\\{\\s*(?:(%1)|(?:(%1)\\s*,\\s*([^\\{\\}]*)))\\s*\\}";
+    const QString SCRIPT_RX = "\\$S\\s*\\{(.*)\\}";    
+    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*..*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))(?:(?:\\s*,\\s*(?:(\\w*)))|(?:))\\)";
+    const int DATASOURCE_INDEX = 3;
+    const int VALUE_INDEX = 2;
+    const int EXPRESSION_ARGUMENT_INDEX = 1;
 
     const QString GROUP_FUNCTION_RX = "(%1\\s*"+GROUP_FUNCTION_PARAM_RX+")";
     const QString GROUP_FUNCTION_NAME_RX = "%1\\s*\\((.*[^\\)])\\)";
     const int SCENE_MARGIN = 50;
+    const QString FUNCTION_MANAGER_NAME = "LimeReport";
+    const QString DATAFUNCTIONS_MANAGER_NAME = "DatasourceFunctions";
+    const QString EOW("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
+    const int DEFAULT_TAB_INDENTION = 4;
+    const int DOCKWIDGET_MARGINS = 4;
+
+    const char SCRIPT_SIGN = 'S';
+    const char FIELD_SIGN = 'D';
+    const char VARIABLE_SIGN = 'V';
 }
     QString extractClassName(QString className);
     QString escapeSimbols(const QString& value);
     QString replaceHTMLSymbols(const QString &value);
-    QVector<QString> normalizeCaptures(const QRegExp &reg);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 1)
+    QVector<QString> normalizeCaptures(const QRegularExpressionMatch &reg);
+#else
+    QVector<QString> normalizeCaptures(const QRegExp &reg);    
+#endif
+    bool isColorDark(QColor color);
 
     enum ExpandType {EscapeSymbols, NoEscapeSymbols, ReplaceHTMLSymbols};
-    enum RenderPass {FirstPass, SecondPass};
+    enum RenderPass {FirstPass = 1, SecondPass = 2};
     enum ArrangeType {AsNeeded, Force};
+    enum ScaleType {FitWidth, FitPage, OneToOne, Percents};
     enum PreviewHint{ShowAllPreviewBars = 0,
                      HidePreviewToolBar = 1,
                      HidePreviewMenuBar = 2,
@@ -113,27 +125,79 @@ namespace Const{
     Q_DECLARE_FLAGS(PreviewHints, PreviewHint)
     Q_FLAGS(PreviewHints)
 
-    class ReportError : public std::runtime_error{
+    class LIMEREPORT_EXPORT ReportError : public std::runtime_error{
     public:
-        ReportError(const QString& message):std::runtime_error(message.toStdString()){}
+        ReportError(const QString& message);
     };
 
-    class ReportSettings{
+    class LIMEREPORT_EXPORT ReportSettings{
     public:
-        ReportSettings():m_suppressAbsentFieldsAndVarsWarnings(false){}
-        void setDefaultValues(){m_suppressAbsentFieldsAndVarsWarnings = false;}
+#ifdef DEFAULT_ITEM_PADDING
+        ReportSettings():m_suppressAbsentFieldsAndVarsWarnings(false), m_baseItemPadding(DEFAULT_ITEM_PADDING){}
+#else
+        ReportSettings():m_suppressAbsentFieldsAndVarsWarnings(false), m_baseItemPadding(0){}
+#endif
+        void setDefaultValues(){
+            m_suppressAbsentFieldsAndVarsWarnings = false;
+#ifdef DEFAULT_ITEM_PADDING
+            m_baseItemPadding = DEFAULT_ITEM_PADDING;
+#else
+            m_baseItemPadding = 0;
+#endif
+
+        }
         bool suppressAbsentFieldsAndVarsWarnings() const;
         void setSuppressAbsentFieldsAndVarsWarnings(bool suppressAbsentFieldsAndVarsWarnings);
+        int baseItemPadding() const;
+        void setBaseItemPadding(int newBaseTextItemPadding);
     private:
         bool m_suppressAbsentFieldsAndVarsWarnings;
+        int m_baseItemPadding;
     };
 
-#ifdef HAVE_QT4
+    class LIMEREPORT_EXPORT IExternalPainter{
+    public:
+        virtual void paintByExternalPainter(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem* options) = 0;
+        virtual ~IExternalPainter();
+    };
+
+    class LIMEREPORT_EXPORT IPainterProxy{
+    public:
+        virtual void setExternalPainter(IExternalPainter* externalPainter) = 0;
+        virtual ~IPainterProxy();
+    };
+
+#if QT_VERSION < 0x050000
     typedef QStyleOptionViewItemV4 StyleOptionViewItem;
 #else
     typedef QStyleOptionViewItem StyleOptionViewItem;
 #endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 1)
+    QRegularExpression getRegEx(QString expression);
+    QRegularExpression getVariableRegEx();
+    QRegularExpression getFieldRegEx();
+    QRegularExpression getScriptRegEx();
+    QRegularExpression getGroupFunctionRegEx(QString functionName);
+    QRegularExpression getGroupFunctionNameRegEx(QString functionName);
+    QRegularExpression getNamedVariableRegEx(QString variableName);
+#endif
 
+
+    class LIMEREPORT_EXPORT Enums
+    {
+    public:
+        enum VariableDataType {Undefined, String, Bool, Int, Real, Date, Time, DateTime};
+#if QT_VERSION >= 0x050500
+        Q_ENUM(VariableDataType)
+#else
+        Q_ENUMS(VariableDataType)
+#endif
+    private:
+        Enums(){}
+        Q_GADGET
+    };
+
+    typedef Enums::VariableDataType VariableDataType;
 
 } // namespace LimeReport
 

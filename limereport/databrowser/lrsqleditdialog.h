@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -73,9 +73,11 @@ private slots:
     void on_rbProxy_clicked(bool checked);
     void on_rbSubQuery_clicked(bool checked);
     void on_pbAddField_clicked();
+    void on_pbDelField_clicked();
     void initQueryMode();
     void initSubQueryMode();
     void initProxyMode();
+    void initCSVMode();
     void slotPreviewData();
     void slotHidePreview();
 private:
@@ -95,17 +97,20 @@ private:
 };
 
 struct SQLEditResult{
-    enum ResultMode{Query,SubQuery,SubProxy};
+    enum ResultMode{Query, SubQuery, SubProxy, CSVText, Undefined};
     QString connectionName;
     QString datasourceName;
     QString oldDatasourceName;
     QString sql;
+    QString csv;
     bool subdetail;
     ResultMode resultMode;
     QString masterDatasource;
     QString childDataSource;
     SQLEditDialog::SQLDialogMode dialogMode;
     QList<LimeReport::FieldsCorrelation> fieldMap;
+    QString separator;
+    bool firstRowIsHeader;
 };
 
 } // namespace LimeReport

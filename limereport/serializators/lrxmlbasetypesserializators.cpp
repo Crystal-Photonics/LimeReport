@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -179,9 +179,9 @@ void XmlFontSerializator::save(const QVariant &value, QString name)
     _node.setAttribute("Type","QFont");
     _node.setAttribute("family",font.family());
     _node.setAttribute("pointSize",font.pointSize());
-#if QT_VERSION>0x040800
-    _node.setAttribute("stylename",font.styleName());
-#endif
+//#if QT_VERSION>0x040800
+//    _node.setAttribute("stylename",font.styleName());
+//#endif
     _node.setAttribute("weight",font.weight());
     //saveBool(_node,"bold",font.bold());
     saveBool(_node,"italic",font.italic());
@@ -194,10 +194,11 @@ QVariant XmlFontSerializator::loadValue()
     QFont font;
     font.setFamily(node()->attribute("family"));
     font.setPointSize(node()->attribute("pointSize").toInt());
-#if QT_VERSION>0x040800
-    font.setStyleName(node()->attribute("stylename"));
-#endif
-    font.setWeight(node()->attribute("weight").toInt());
+//#if QT_VERSION>0x040800
+//    font.setStyleName(node()->attribute("stylename"));
+//#endif
+    if (node()->attribute("weight").toInt() > 0)
+        font.setWeight(static_cast<QFont::Weight>(node()->attribute("weight").toInt()));
     if (!node()->attribute("bold").isEmpty())
       font.setBold(node()->attribute("bold").toInt());
     font.setItalic(node()->attribute("italic").toInt());

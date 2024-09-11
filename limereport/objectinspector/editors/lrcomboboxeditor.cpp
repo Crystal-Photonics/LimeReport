@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -56,7 +56,12 @@ ComboBoxEditor::ComboBoxEditor(QWidget *parent, bool clearable) :
         connect(m_buttonClear,SIGNAL(clicked()),this,SLOT(slotClearButtonClicked()));
     }
 
-    connect(m_comboBox,SIGNAL(currentIndexChanged(QString)),this,SLOT(slotCurrentIndexChanged(QString)));
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+    connect(m_comboBox, SIGNAL(currentTextChanged(QString)), this, SLOT(slotCurrentIndexChanged(QString)));
+#else
+    connect(m_comboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(slotCurrentIndexChanged(QString)));
+#endif
+
     m_comboBox->installEventFilter(this);
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->addWidget(m_comboBox);

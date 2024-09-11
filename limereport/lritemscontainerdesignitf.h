@@ -5,7 +5,7 @@
 
 namespace LimeReport{
 
-class Segment{
+class LIMEREPORT_EXPORT Segment{
 public:
     Segment(qreal segmentStart,qreal segmentEnd):m_begin(segmentStart),m_end(segmentEnd){}
     bool intersect(Segment value);
@@ -15,17 +15,17 @@ private:
     qreal m_end;
 };
 
-class VSegment : public Segment{
+class LIMEREPORT_EXPORT VSegment : public Segment{
 public:
     VSegment(QRectF rect):Segment(rect.top(),rect.bottom()){}
 };
 
-struct HSegment :public Segment{
+struct LIMEREPORT_EXPORT HSegment :public Segment{
 public:
     HSegment(QRectF rect):Segment(rect.left(),rect.right()){}
 };
 
-struct ItemSortContainer {
+struct LIMEREPORT_EXPORT ItemSortContainer {
     QRectF m_rect;
     BaseDesignIntf * m_item;
     ItemSortContainer(BaseDesignIntf *item){
@@ -35,17 +35,20 @@ struct ItemSortContainer {
 };
 
 typedef QSharedPointer< ItemSortContainer > PItemSortContainer;
-bool itemSortContainerLessThen(const PItemSortContainer c1, const PItemSortContainer c2);
+bool LIMEREPORT_EXPORT itemSortContainerLessThen(const PItemSortContainer c1, const PItemSortContainer c2);
 
-class ItemsContainerDesignInft : public BaseDesignIntf{
+class LIMEREPORT_EXPORT ItemsContainerDesignInft : public BookmarkContainerDesignIntf{
+    Q_OBJECT
 public:
   ItemsContainerDesignInft(const QString& xmlTypeName, QObject* owner = 0, QGraphicsItem* parent=0):
-      BaseDesignIntf(xmlTypeName, owner, parent){}
+      BookmarkContainerDesignIntf(xmlTypeName, owner, parent){}
+  enum SnapshotType{Full, IgnoreBands};
 protected:
-  void  snapshotItemsLayout();
+  void  snapshotItemsLayout(SnapshotType type = Full);
   void  arrangeSubItems(RenderPass pass, DataSourceManager *dataManager, ArrangeType type = AsNeeded);
   qreal findMaxBottom() const;
   qreal findMaxHeight() const;
+  qreal findMinTop() const;
 private:
   QVector<PItemSortContainer> m_containerItems;
 

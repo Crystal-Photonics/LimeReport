@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -38,8 +38,9 @@ namespace{
     {
         return new LimeReport::QRealPropItem(object, objects, name, displayName, data, parent, readonly);
     }
+
     bool VARIABLE_IS_NOT_USED  registred = LimeReport::ObjectPropFactory::instance().registerCreator(LimeReport::APropIdent("qreal",""),QObject::tr("qreal"),createQRealPropItem);
-    bool VARIABLE_IS_NOT_USED  registredDouble = LimeReport::ObjectPropFactory::instance().registerCreator(LimeReport::APropIdent("double",""),QObject::tr("qreal"),createQRealPropItem);
+    bool VARIABLE_IS_NOT_USED  registredDouble = LimeReport::ObjectPropFactory::instance().registerCreator(LimeReport::APropIdent("double",""),QObject::tr("qreal"),createQRealPropItem);    
 }
 
 namespace LimeReport{
@@ -61,7 +62,6 @@ void QRealPropItem::setPropertyEditorData(QWidget *propertyEditor, const QModelI
 void QRealPropItem::setModelData(QWidget *propertyEditor, QAbstractItemModel *model, const QModelIndex &index)
 {
     model->setData(index,qobject_cast<QDoubleSpinBox*>(propertyEditor)->value());
-    //object()->setProperty(propertyName().toLatin1(),propertyValue());
     setValueToObject(propertyName(),propertyValue());
 }
 

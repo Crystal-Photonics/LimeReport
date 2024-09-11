@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -34,7 +34,11 @@
 #include <QFocusEvent>
 #include <QApplication>
 #include <QStyle>
+#if QT_VERSION < QT_VERSION_CHECK(5,12,3)
 #include <QDesktopWidget>
+#else
+#include <QScreen>
+#endif
 #include "lrtextitempropertyeditor.h"
 
 namespace LimeReport{
@@ -66,7 +70,11 @@ void ButtonLineEditor::editButtonClicked()
 {
     TextItemPropertyEditor* editor = new TextItemPropertyEditor(QApplication::activeWindow());
     editor->setAttribute(Qt::WA_DeleteOnClose);
+#if QT_VERSION < QT_VERSION_CHECK(5,12,3)
     editor->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, editor->size(), QApplication::desktop()->availableGeometry()));
+#else
+    editor->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, editor->size(), QGuiApplication::screens().first()->availableGeometry()));
+#endif
     editor->setWindowTitle(m_propertyName);
     editor->setText(m_lineEdit->text());
     connect(editor,SIGNAL(accepted()),this,SLOT(editingByEditorFinished()));
@@ -131,6 +139,7 @@ void ButtonLineEditor::editingByEditorFinished()
 {
     setText(qobject_cast<TextItemPropertyEditor*>(sender())->text());
     m_lineEdit->setFocus();
+    emit editingFinished();
 }
 
 } //namespace LimeReport

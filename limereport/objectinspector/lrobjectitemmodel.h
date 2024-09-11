@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -72,6 +72,9 @@ public:
     void                        setValidator(ValidatorIntf* validator);
     void                        translatePropertyName();
     void                        clearObjectsList();
+    bool                        isTranslateProperties() const;
+    void                        setTranslateProperties(bool isTranslateProperties);
+
 signals:
     void objectPropetyChanged(const QString& , const QVariant&, const QVariant&);
 private slots:
@@ -83,12 +86,13 @@ private:
     LimeReport::CreatePropItem    propertyItemCreator(QMetaProperty prop);
     LimeReport::ObjectPropItem*   createPropertyItem(QMetaProperty prop, QObject *object, ObjectPropItem::ObjectsList* objects, ObjectPropItem* parent);
 private:
-    LimeReport::ObjectPropItem*   m_rootNode;
-    QObject*                    m_object;
-    QList<QObject*>             m_objects;
-    bool                        m_dataChanging;
-    bool                        m_subclassesAsLevel;
-    ValidatorIntf*              m_validator;
+    LimeReport::ObjectPropItem*     m_rootNode;
+    QObject*                        m_object;
+    QList<QObject*>                 m_objects;
+    bool                            m_dataChanging;
+    bool                            m_subclassesAsLevel;
+    ValidatorIntf*                  m_validator;
+    bool                            m_translateProperties;
 };
 
 }

@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -132,6 +132,43 @@ void EnumPropItem::translateEnumItemName()
     tr("Horizontal");
     tr("Vertical");
     tr("VerticalUniform");
+    tr("Pie");
+    tr("VerticalBar");
+    tr("HorizontalBar");
+    tr("TitleAlignLeft");
+    tr("TitleAlignRight");
+    tr("TitleAlignCenter");
+    tr("Layout");
+    tr("Table");
+    tr("Millimeters");
+    tr("Inches");
+    tr("Scale");
+    tr("Split");
+    tr("GridLines");
+    tr("Lines");
+    tr("Solid");
+    tr("NoStyle");
+    tr("Dashed");
+    tr("Dot");
+    tr("DashDot");
+    tr("DashDotDot");
+    tr("Doubled");
+    tr("LegendPoints");
+    tr("LegendLines");
+    tr("LegendAlignRightCenter");
+    tr("LegendAlignRightTop");
+    tr("LegendAlignRightBottom");
+    tr("LegendAlignBottomRight");
+    tr("LegendAlignBottomCenter");
+    tr("LegendAlignBottomLeft");
+    tr("SolidLine");
+    tr("NoPen");
+    tr("DashLine");
+    tr("DotLine");
+    tr("DashDotLine");
+    tr("DashDotDotLine");
+    tr("CustomDashLine");
+
 }
 
 void EnumPropItem::setPropertyEditorData(QWidget *propertyEditor, const QModelIndex &) const
@@ -149,7 +186,7 @@ void EnumPropItem::setModelData(QWidget *propertyEditor, QAbstractItemModel *mod
 QString EnumPropItem::nameByType(int value) const
 {
     QMetaEnum propEnum = object()->metaObject()->property(object()->metaObject()->indexOfProperty(propertyName().toLatin1())).enumerator();
-    return tr(propEnum.valueToKey(value));
+    return isTranslateProperty() ? tr(propEnum.valueToKey(value)) : propEnum.valueToKey(value);
 }
 
 int EnumPropItem::typeByName(const QString &value) const

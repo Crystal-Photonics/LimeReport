@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -42,7 +42,8 @@ bool lesThen(ObjectPropItem* v1, ObjectPropItem* v2){
 
 ObjectPropItem::ObjectPropItem(QObject *object, ObjectsList* objects, const QString &name, const QString &displayName, ObjectPropItem *parent, bool isClass)
     :m_object(object), m_name(name), m_displayName(displayName), m_haveValue(false), m_parent(parent), m_colorIndex(-1),
-      m_readonly(true), m_model(0), m_isClass(isClass), m_changingValue(false)
+      m_readonly(true), m_model(0), m_isClass(isClass), m_changingValue(false),
+      m_translatePropperty(true)
 {
     if (parent) setModel(parent->model());
     m_index=QModelIndex();
@@ -60,7 +61,8 @@ ObjectPropItem::ObjectPropItem(QObject *object, ObjectsList* objects, const QStr
 ObjectPropItem::ObjectPropItem(QObject *object, ObjectsList* objects, const QString &name, const QString &displayName, const QVariant &value, ObjectPropItem *parent, bool readonly)
     :m_object(object), m_name(name), m_displayName(displayName), m_value(value),
      m_haveValue(true), m_parent(parent), m_colorIndex(-1),
-     m_readonly(readonly), m_model(0), m_isClass(false), m_changingValue(false)
+     m_readonly(readonly), m_model(0), m_isClass(false), m_changingValue(false),
+     m_translatePropperty(true)
 {
     if (parent) setModel(parent->model());
     m_index=QModelIndex();
@@ -91,7 +93,7 @@ void ObjectPropItem::appendItem(ObjectPropItem *item){
 
 void ObjectPropItem::sortItem()
 {
-    qSort(m_childItems.begin(), m_childItems.end(), lesThen);
+    std::sort(m_childItems.begin(), m_childItems.end(), lesThen);
 }
 
 QVariant ObjectPropItem::propertyValue() const {
@@ -107,6 +109,10 @@ void ObjectPropItem::setPropertyValue(QVariant value){
             if (item->modelIndex().isValid()) itemModel->itemDataChanged(item->modelIndex());
         }
     }
+}
+
+QString ObjectPropItem::displayName() const {
+    return isTranslateProperty() ? m_displayName : propertyName();
 }
 
 int ObjectPropItem::row(){
@@ -153,6 +159,16 @@ void ObjectPropItem::setValueToObject(const QString &propertyName, QVariant prop
                 item->setProperty(propertyName.toLatin1(), propertyValue);
         }
     }
+}
+
+bool ObjectPropItem::isTranslateProperty() const
+{
+    return m_translatePropperty;
+}
+
+void ObjectPropItem::setTranslateProperty(bool translatePropperty)
+{
+    m_translatePropperty = translatePropperty;
 }
 
 ObjectPropItem * ObjectPropItem::findChild(const QString &name)

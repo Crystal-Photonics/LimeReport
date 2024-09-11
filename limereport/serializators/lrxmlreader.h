@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -61,6 +61,7 @@ protected:
     void readProperty(QObject *item, QDomElement *node);
     void readQObject(QObject *item, QDomElement *node);
     void readCollection(QObject *item, QDomElement *node);
+    void readTranslation(QObject *item, QDomElement *node);
     QVariant getValue(QDomElement *node);
 
 protected:

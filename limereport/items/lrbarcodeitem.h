@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -30,17 +30,16 @@
 #ifndef LRBARCODEITEM_H
 #define LRBARCODEITEM_H
 #include "lritemdesignintf.h"
-#include <qzint.h>
+#include <QtGlobal>
 
 namespace LimeReport{
 
 class BarcodeItem : public LimeReport::ContentItemDesignIntf {
     Q_OBJECT
-    Q_ENUMS(BarcodeType)
-    Q_ENUMS(AngleType)
-    Q_ENUMS(InputMode)
     Q_PROPERTY(QString content READ content WRITE setContent)
-    Q_PROPERTY(BarcodeType barcodeType READ barcodeType WRITE setBarcodeType )
+    Q_PROPERTY(BarcodeType barcodeType READ barcodeType WRITE setBarcodeType)
+    Q_PROPERTY(QString datasource READ datasource WRITE setDatasource)
+    Q_PROPERTY(QString field READ field WRITE setField)
     Q_PROPERTY(QString testValue READ designTestValue WRITE setDesignTestValue)
     Q_PROPERTY(QColor foregroundColor READ foregroundColor WRITE setForegroundColor)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor)
@@ -50,11 +49,10 @@ class BarcodeItem : public LimeReport::ContentItemDesignIntf {
     Q_PROPERTY(int securityLevel READ securityLevel WRITE setSecurityLevel)
     Q_PROPERTY(int pdf417CodeWords READ pdf417CodeWords WRITE setPdf417CodeWords)
     Q_PROPERTY(InputMode inputMode READ inputMode WRITE setInputMode)
+    Q_PROPERTY(bool hideText READ hideText WRITE setHideText)
+    Q_PROPERTY(int option3 READ option3 WRITE setOption3)
+    Q_PROPERTY(bool hideIfEmpty READ hideIfEmpty WRITE setHideIfEmpty)
 public:
-//    enum BarcodeType {QRCODE=58,CODE128=20,DATAMATRIX=71,MAXICODE=57,MICROPDF417=84};
-//    enum BarcodeType {CODE_11=1,C25MATRIX=2,QRCODE=58,CODE128=20,DATAMATRIX=71,MAXICODE=57,MICROPDF417=84,
-//                      EAN=13,PDF417=55, TELEPEN_NUM=87,ITF14=89, KIX=90, MICROQR=97,
-//                      EAN14=72,CHANNEL=140,CODEONE=141,GRIDMATRIX=142};
     enum BarcodeType {
         CODE11          =1,
         C25MATRIX       =2,
@@ -65,6 +63,7 @@ public:
         CODE39          =8,
         EXCODE39        =9,
         EANX            =13,
+        EANX_CHK        =14,
         EAN128          =16,
         CODABAR         =18,
         CODE128         =20,
@@ -115,21 +114,37 @@ public:
         ITALYPOST       =94,
         DPD             =96,
         MICROQR         =97,
+        HIBC_128        =98,
+        HIBC_39         =99,
+        HIBC_DM         =102,
+        HIBC_QR         =104,
+        HIBC_PDF        =106,
+        HIBC_MICPDF     =108,
+        HIBC_BLOCKF     =110,
+        HIBC_AZTEC      =112,
+        DOTCODE         =115,
+        HANXIN          =116,
         TELEPEN_NUM     =128,
         CODE32          =129,
-        EANX_CC         =130,
-        EAN128_CC       =131,
-        RSS14_CC        =132,
-        RSS_LTD_CC      =133,
-        RSS_EXP_CC      =134,
-        UPCA_CC         =135,
-        UPCE_CC         =136,
-        RSS14STACK_CC   =137,
-        RSS14_OMNI_CC   =138,
-        RSS_EXPSTACK_CC =139
+//        EANX_CC         =130,
+//        EAN128_CC       =131,
+//        RSS14_CC        =132,
+//        RSS_LTD_CC      =133,
+//        RSS_EXP_CC      =134,
+//        UPCA_CC         =135,
+//        UPCE_CC         =136,
+//        RSS14STACK_CC   =137,
+//        RSS14_OMNI_CC   =138,
+//        RSS_EXPSTACK_CC =139,
+        CHANNEL         =140,
+        CODEONE         =141,
+        GRIDMATRIX      =142,
+        UPNQR           =143
 
     };
+
     enum AngleType{Angle0,Angle90,Angle180,Angle270};
+
     enum InputMode{
         DATA_INPUT_MODE     = 0,
         UNICODE_INPUT_MODE  = 1,
@@ -137,6 +152,15 @@ public:
         KANJI_INPUT_MODE    = 3,
         SJIS_INPUT_MODE     = 4
     };
+#if QT_VERSION >= 0x050500
+    Q_ENUM(BarcodeType)
+    Q_ENUM(AngleType)
+    Q_ENUM(InputMode)
+#else
+    Q_ENUMS(BarcodeType)
+    Q_ENUMS(AngleType)
+    Q_ENUMS(InputMode)
+#endif
     BarcodeItem(QObject *owner, QGraphicsItem *parent);
     ~BarcodeItem();
     virtual BaseDesignIntf* createSameTypeItem(QObject *owner, QGraphicsItem *parent);
@@ -147,6 +171,10 @@ public:
     QString content() const {return m_content;}
     void setBarcodeType(BarcodeType value);
     BarcodeType barcodeType(){return m_barcodeType;}
+    QString datasource() const;
+    void setDatasource(const QString &datasource);
+    QString field() const;
+    void setField(const QString &field);
     void setDesignTestValue(QString value);
     QString designTestValue(){return m_designTestValue;}
     QColor foregroundColor(){return m_foregroundColor;}
@@ -163,13 +191,23 @@ public:
     void setSecurityLevel(int securityLevel);
     int pdf417CodeWords() const;
     void setPdf417CodeWords(int pdf417CodeWords);
-
     InputMode inputMode() const;
     void setInputMode(const InputMode &inputMode);
+    bool hideText() const;
+    void setHideText(bool hideText);
+    int option3() const;
+    void setOption3(int option3);
+    bool hideIfEmpty() const;
+    void setHideIfEmpty(bool hideIfEmpty);
+    bool isEmpty() const;
 
 private:
-    Zint::QZint m_bc;
+    void expandContent(QString data, DataSourceManager *dataManager, RenderPass pass);
+
+private:
     QString m_content;
+    QString m_datasource;
+    QString m_field;
     QString m_designTestValue;
     BarcodeType m_barcodeType;
     QColor m_foregroundColor;
@@ -180,6 +218,9 @@ private:
     int m_securityLevel;
     int m_pdf417CodeWords;
     InputMode m_inputMode;
+    bool m_hideText;
+    int m_option3;
+    bool m_hideIfEmpty;
 };
 
 }

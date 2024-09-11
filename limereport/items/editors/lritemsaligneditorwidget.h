@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -45,7 +45,7 @@ public:
     explicit ItemsAlignmentEditorWidget(PageDesignIntf* page, const QString &title, QWidget *parent = 0);
     explicit ItemsAlignmentEditorWidget(PageDesignIntf* page, QWidget *parent = 0);
 private slots:
-    void slotBrinToFront();
+    void slotBringToFront();
     void slotSendToBack();
     void slotAlignToLeft();
     void slotAlignToRight();

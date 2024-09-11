@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -38,6 +38,7 @@ namespace LimeReport{
 
 class DataSourceManager;
 class BandDesignIntf;
+class PageItemDesignIntf;
 
 class GroupFunction : public QObject{
     Q_OBJECT
@@ -50,10 +51,12 @@ public:
     const QString& data(){return m_data;}
     const QString& error(){return m_errorMessage;}
     QVector<QVariant>& values(){return m_values;}
+    QHash<BandDesignIntf*, QVariant> m_valuesByBand;
     const QString& dataBandName(){return m_dataBandName;}
-    virtual QVariant calculate()=0;
+    virtual QVariant calculate(PageItemDesignIntf* page = 0)=0;
 public slots:
     void slotBandRendered(BandDesignIntf* band);
+    void slotBandReRendered(BandDesignIntf* oldBand, BandDesignIntf* newBand);
 protected:
     void setName(const QString& value){m_name=value;}
     QVariant addition(QVariant value1, QVariant value2);
@@ -95,7 +98,7 @@ public:
     CountGroupFunction(const QString& expression, const QString& dataBandName, DataSourceManager *dataManager)
         :GroupFunction(expression, dataBandName, dataManager){setName("COUNT");}
 protected:
-    virtual QVariant calculate(){return values().count();}
+    virtual QVariant calculate(PageItemDesignIntf* page = 0);
 };
 
 class SumGroupFunction :public GroupFunction{
@@ -104,7 +107,7 @@ public:
     SumGroupFunction(const QString& expression, const QString& dataBandName, DataSourceManager *dataManager)
         :GroupFunction(expression, dataBandName, dataManager){setName("SUM");}
 protected:
-    virtual QVariant calculate();
+    virtual QVariant calculate(PageItemDesignIntf* page = 0);
 };
 
 class AvgGroupFunction :public GroupFunction{
@@ -113,7 +116,7 @@ public:
     AvgGroupFunction(const QString& expression, const QString& dataBandName, DataSourceManager *dataManager)
         :GroupFunction(expression, dataBandName, dataManager){setName("AVG");}
 protected:
-    virtual QVariant calculate();
+    virtual QVariant calculate(PageItemDesignIntf* page = 0);
 };
 
 class MinGroupFunction :public GroupFunction{
@@ -122,7 +125,7 @@ public:
     MinGroupFunction(const QString& expression, const QString& dataBandName, DataSourceManager *dataManager)
         :GroupFunction(expression, dataBandName, dataManager){setName("MIN");}
 protected:
-    virtual QVariant calculate();
+    virtual QVariant calculate(PageItemDesignIntf* page = 0);
 };
 
 class MaxGroupFunction :public GroupFunction{
@@ -131,7 +134,7 @@ public:
     MaxGroupFunction(const QString& expression, const QString& dataBandName, DataSourceManager *dataManager)
         :GroupFunction(expression, dataBandName, dataManager){setName("MAX");}
 protected:
-    virtual QVariant calculate();
+    virtual QVariant calculate(PageItemDesignIntf* page = 0);
 };
 
 template <typename T>

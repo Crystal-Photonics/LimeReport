@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -33,6 +33,7 @@
 #include <QtGui>
 #include <QLabel>
 #include <QTextDocument>
+#include <QtGlobal>
 
 #include "lritemdesignintf.h"
 #include "lritemdesignintf.h"
@@ -41,17 +42,14 @@
 namespace LimeReport {
 
 class Tag;
-class TextItem : public LimeReport::ContentItemDesignIntf, IPageInit {
+class TextItem : public ContentItemDesignIntf, IPageInit {
     Q_OBJECT
-    Q_ENUMS(AutoWidth)
-    Q_ENUMS(AngleType)
-    Q_ENUMS(ValueType)
     Q_PROPERTY(QString content READ content WRITE setContent)
     Q_PROPERTY(int margin READ marginSize WRITE setMarginSize)
-    Q_PROPERTY(Qt::Alignment alignment READ alignment() WRITE setAlignment)
-    Q_PROPERTY(AutoWidth autoWidth READ autoWidth() WRITE setAutoWidth)
-    Q_PROPERTY(bool autoHeight READ autoHeight() WRITE setAutoHeight)
-    Q_PROPERTY(QFont font READ font() WRITE setTextItemFont)
+    Q_PROPERTY(Qt::Alignment alignment READ alignment WRITE setAlignment)
+    Q_PROPERTY(AutoWidth autoWidth READ autoWidth WRITE setAutoWidth)
+    Q_PROPERTY(bool autoHeight READ autoHeight WRITE setAutoHeight)
+    Q_PROPERTY(QFont font READ font WRITE setTextItemFont)
     Q_PROPERTY(int backgroundOpacity READ opacity WRITE setBackgroundOpacity)
     Q_PROPERTY(BGMode backgroundMode READ backgroundMode WRITE setBackgroundModeProperty)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColorProperty)
@@ -71,11 +69,25 @@ class TextItem : public LimeReport::ContentItemDesignIntf, IPageInit {
     Q_PROPERTY(BrushStyle backgroundBrushStyle READ backgroundBrushStyle WRITE setBackgroundBrushStyle)
     Q_PROPERTY(qreal textIndent READ textIndent WRITE setTextIndent)
     Q_PROPERTY(Qt::LayoutDirection textLayoutDirection READ textLayoutDirection WRITE setTextLayoutDirection)
+    Q_PROPERTY(bool fillInSecondPass READ fillInSecondPass WRITE setFillInSecondPass)
+    Q_PROPERTY(bool watermark READ isWatermark WRITE setWatermark)
+    Q_PROPERTY(bool replaceCRwithBR READ isReplaceCarriageReturns WRITE setReplaceCarriageReturns)
+    Q_PROPERTY(bool hideIfEmpty READ hideIfEmpty WRITE setHideIfEmpty)
+    Q_PROPERTY(int fontLetterSpacing READ fontLetterSpacing WRITE setFontLetterSpacing)
 public:
 
-    enum AutoWidth{NoneAutoWidth,MaxWordLength,MaxStringLength};
-    enum AngleType{Angle0,Angle90,Angle180,Angle270,Angle45,Angle315};
-    enum ValueType{Default,DateTime,Double};
+    enum AutoWidth{NoneAutoWidth, MaxWordLength, MaxStringLength};
+    enum AngleType{Angle0, Angle90, Angle180, Angle270, Angle45, Angle315};
+    enum ValueType{Default, DateTime, Double};
+#if QT_VERSION >= 0x050500
+    Q_ENUM(AutoWidth)
+    Q_ENUM(AngleType)
+    Q_ENUM(ValueType)
+#else
+    Q_ENUMS(AutoWidth)
+    Q_ENUMS(AngleType)
+    Q_ENUMS(ValueType)
+#endif
 
     void Init();
     TextItem(QObject* owner=0, QGraphicsItem* parent=0);
@@ -104,7 +116,7 @@ public:
 
     bool canBeSplitted(int height) const;
     bool isSplittable() const { return true;}
-    bool isEmpty() const{return m_strText.trimmed().isEmpty() /*m_text->isEmpty()*/;}
+    bool isEmpty() const{return m_strText.trimmed().isEmpty();}
     BaseDesignIntf* cloneUpperPart(int height, QObject *owner, QGraphicsItem *parent);
     BaseDesignIntf* cloneBottomPart(int height, QObject *owner, QGraphicsItem *parent);
     BaseDesignIntf* createSameTypeItem(QObject* owner=0, QGraphicsItem* parent=0);
@@ -163,13 +175,23 @@ public:
     void setTextIndent(const qreal &textIndent);
     Qt::LayoutDirection textLayoutDirection() const;
     void setTextLayoutDirection(const Qt::LayoutDirection &textLayoutDirection);
+
+    void setWatermark(bool watermark);
     
+    bool isReplaceCarriageReturns() const;
+    void setReplaceCarriageReturns(bool isReplaceCarriageReturns);
+
+    bool hideIfEmpty() const;
+    void setHideIfEmpty(bool hideIfEmpty);
+
+    int fontLetterSpacing() const;
+    void setFontLetterSpacing(int fontLetterSpacing);
+
 protected:
     void updateLayout();
     bool isNeedExpandContent() const;
-    QString replaceBR(QString text);
-    QString replaceReturns(QString text);
-    int fakeMarginSize() const;
+    QString replaceBR(QString text) const;
+    QString replaceReturns(QString text) const;
     QString getTextPart(int height, int skipHeight);
     void restoreLinksEvent();
     void preparePopUpMenu(QMenu &menu);
@@ -185,8 +207,6 @@ private:
     TextPtr textDocument() const;
 private:
     QString m_strText;
-    //QTextLayout m_layout;
-    //QTextDocument* m_text;    
     Qt::Alignment m_alignment;
     bool m_autoHeight;
     AutoWidth m_autoWidth;
@@ -201,6 +221,7 @@ private:
     int m_underlineLineSize;
     bool m_allowHTML;
     bool m_allowHTMLInFields;
+    bool m_replaceCarriageReturns;
 
     QString m_format;
     ValueType m_valueType;
@@ -208,7 +229,8 @@ private:
     TextItem* m_follower;
     qreal m_textIndent;
     Qt::LayoutDirection m_textLayoutDirection;
-
+    bool m_hideIfEmpty;
+    int m_fontLetterSpacing;
 };
 
 }
