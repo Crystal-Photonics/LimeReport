@@ -4,6 +4,8 @@ CONFIG += build_translations
     CONFIG += zint
 }
 
+QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+
 ZINT_PATH = $$PWD/3rdparty/zint-2.4.4
 contains(CONFIG,zint){
     DEFINES += HAVE_ZINT

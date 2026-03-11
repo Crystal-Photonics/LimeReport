@@ -43,7 +43,7 @@
 #endif
 
 namespace LimeReport {
-
+	Q_NAMESPACE
 #ifdef __GNUC__
 #define VARIABLE_IS_NOT_USED __attribute__ ((unused))
 #else
@@ -52,6 +52,7 @@ namespace LimeReport {
 
 
 namespace Const{
+
     int const RESIZE_HANDLE_SIZE = 10;
     int const SELECTION_PEN_SIZE = 4;
     int const MINIMUM_ITEM_WIDTH = 2*RESIZE_HANDLE_SIZE;
