@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -45,6 +45,8 @@ public:
     virtual void setPropertyEditorData(QWidget * propertyEditor, const QModelIndex &) const;
     virtual void setModelData(QWidget * propertyEditor, QAbstractItemModel * model, const QModelIndex & index);
     bool paint(QPainter *painter, const StyleOptionViewItem &option, const QModelIndex &index);
+protected:
+    QPixmap getIndicatorImage(const StyleOptionViewItem &option);
 };
 } // namespace LimeReport
 

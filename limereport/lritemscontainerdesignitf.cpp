@@ -1,19 +1,18 @@
 #include "lritemscontainerdesignitf.h"
 #include "lritemdesignintf.h"
+#include "lrbanddesignintf.h"
 
 namespace LimeReport {
 
 bool Segment::intersect(Segment value)
 {
-    return ((value.m_end>=m_begin)&&(value.m_end<=m_end))   ||
-           ((value.m_begin>=m_begin)&&(value.m_end>=m_end))   ||
-           ((value.m_begin>=m_begin)&&(value.m_end<=m_end)) ||
-           ((value.m_begin<m_begin)&&(value.m_end>m_end)) ;
+    return (value.m_begin <= m_end) && (value.m_end >= m_begin);
 }
 
 qreal Segment::intersectValue(Segment value)
 {
-    if ((value.m_end>=m_begin)&&(value.m_end<=m_end)){
+    if (!intersect(value)) return 0;
+    if ((value.m_end >= m_begin) && (value.m_end <= m_end)){
         return value.m_end-m_begin;
     }
     if ((value.m_begin>=m_begin)&&(value.m_end>=m_end)){
@@ -37,13 +36,17 @@ bool itemSortContainerLessThen(const PItemSortContainer c1, const PItemSortConta
     else return c1->m_rect.y()<c2->m_rect.y();
 }
 
-void ItemsContainerDesignInft::snapshotItemsLayout()
+void ItemsContainerDesignInft::snapshotItemsLayout(SnapshotType type)
 {
     m_containerItems.clear();
-    foreach(BaseDesignIntf *childItem,childBaseItems()){
-          m_containerItems.append(PItemSortContainer(new ItemSortContainer(childItem)));
+    foreach(BaseDesignIntf *childItem, childBaseItems()){
+        if (type == IgnoreBands){
+            if (!dynamic_cast<BandDesignIntf*>(childItem))
+                m_containerItems.append(PItemSortContainer(new ItemSortContainer(childItem)));
+        } else
+            m_containerItems.append(PItemSortContainer(new ItemSortContainer(childItem)));
     }
-    qSort(m_containerItems.begin(),m_containerItems.end(),itemSortContainerLessThen);
+    std::sort(m_containerItems.begin(),m_containerItems.end(),itemSortContainerLessThen);
 }
 
 void ItemsContainerDesignInft::arrangeSubItems(RenderPass pass, DataSourceManager *dataManager, ArrangeType type)
@@ -93,14 +96,25 @@ void ItemsContainerDesignInft::arrangeSubItems(RenderPass pass, DataSourceManage
 
 qreal ItemsContainerDesignInft::findMaxBottom() const
 {
-    qreal maxBottom=0;
+    qreal maxBottom = 0;
     foreach(QGraphicsItem* item,childItems()){
         BaseDesignIntf* subItem = dynamic_cast<BaseDesignIntf *>(item);
         if(subItem)
            if ( subItem->isVisible() && (subItem->geometry().bottom()>maxBottom) )
-               maxBottom=subItem->geometry().bottom();
+               maxBottom = subItem->geometry().bottom();
     }
     return maxBottom;
+}
+
+qreal ItemsContainerDesignInft::findMinTop() const{
+    qreal minTop = height();
+    foreach(QGraphicsItem* item,childItems()){
+        BaseDesignIntf* subItem = dynamic_cast<BaseDesignIntf *>(item);
+        if(subItem)
+           if ( subItem->isVisible() && (subItem->geometry().top()<minTop) )
+               minTop = subItem->geometry().top();
+    }
+    return minTop > 0 ? minTop : 0;
 }
 
 qreal ItemsContainerDesignInft::findMaxHeight() const

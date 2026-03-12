@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -35,7 +35,6 @@
 #include <QIcon>
 #include <QImage>
 #include <QPainter>
-#include <QApplication>
 #include <QStyle>
 #include <QStylePainter>
 
@@ -98,8 +97,8 @@ QString FlagsPropItem::displayValue() const
     {
         if ((propEnum.keyToValue(propEnum.key(i)) == 0) ? propertyValue().toInt() == 0 : (propertyValue().toInt() & propEnum.keyToValue(propEnum.key(i))) == propEnum.keyToValue(propEnum.key(i)))
         {
-            if (result.isEmpty()) result+= tr(propEnum.key(i));
-            else result=result+" | "+tr(propEnum.key(i));
+            if (result.isEmpty()) result+= isTranslateProperty() ? tr(propEnum.key(i)) : propEnum.key(i);
+            else result=result+" | "+ (isTranslateProperty() ? tr(propEnum.key(i)) : propEnum.key(i));
         }
 
     }
@@ -123,6 +122,7 @@ void FlagsPropItem::translateFlagsItem()
     tr("BottomLine");
     tr("LeftLine");
     tr("RightLine");
+    tr("AllLines");
 }
 
 FlagPropItem::FlagPropItem(QObject* object, ObjectsList* objects, const QString &propName, const QString &displayName, const QVariant &value, ObjectPropItem* parent, bool readonly)

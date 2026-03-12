@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -62,7 +62,9 @@ private:
     bool enumOrFlag(QString name, QObject* item);
     QString extractClassName(QObject* item);
     bool isCollection(QString propertyName, QObject *item);
+    bool isTranslation(QString propertyName, QObject *item);
     void saveCollection(QString propertyName, QObject *item, QDomElement *node);
+    void saveTranslation(QString propertyName, QObject *item, QDomElement *node);
     bool isQObject(QString propertyName, QObject *item);
     bool replaceNode(QDomElement node, QObject *item);
 private:

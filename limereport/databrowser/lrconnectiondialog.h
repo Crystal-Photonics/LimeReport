@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -59,6 +59,8 @@ private slots:
     void slotCheckConnection();
     void on_toolButton_clicked();
     void on_cbbUseDefaultConnection_toggled(bool checked);
+
+    void on_toolButton_2_toggled(bool checked);
 
 private:
     Ui::ConnectionDialog *ui;

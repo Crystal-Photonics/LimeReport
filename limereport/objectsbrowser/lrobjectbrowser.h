@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -42,7 +42,7 @@ public:
     void setObject(QObject* value);
     QObject* object() const;
     explicit ObjectBrowserNode(QTreeWidget *view);
-    explicit ObjectBrowserNode(QTreeWidgetItem *parent);
+    explicit ObjectBrowserNode(QTreeWidgetItem *parent = 0);
     bool operator <(const QTreeWidgetItem& other) const;
 private:
     QObject* m_object;
@@ -53,13 +53,14 @@ class ObjectBrowser :public QWidget
     Q_OBJECT
 public:
     ObjectBrowser(QWidget *parent=0);
-    void setReportEditor(LimeReport::ReportDesignWidget* report);
+    void setReportEditor(LimeReport::ReportDesignWidget* designerWidget);
     void setMainWindow(QMainWindow* mainWindow);
 protected:
     void fillNode(QTreeWidgetItem *parentNode, BaseDesignIntf *reportItem, BaseDesignIntf* ignoredItem = 0);
     void buildTree(BaseDesignIntf *ignoredItem = 0);
     void removeItem(BaseDesignIntf* item);
     void findAndRemove(QTreeWidgetItem *node, BaseDesignIntf *item);
+    void moveItemNode(BaseDesignIntf* item, BaseDesignIntf* parent);
 private slots:
 //    void slotObjectNameChanged(const QString& objectName);
     void slotPropertyObjectNameChanged(const QString& oldName, const QString& newName);
@@ -77,11 +78,13 @@ private slots:
     void slotActivePageUpdated(LimeReport::PageDesignIntf*);
     void slotItemParentChanged(BaseDesignIntf* item, BaseDesignIntf* parent);
 private:
-    ReportDesignWidget* m_report;
+    ReportDesignWidget* m_designerWidget;
     QMainWindow*        m_mainWindow;
     QTreeWidget*        m_treeView;
     QMap<QObject*, ObjectBrowserNode*> m_itemsMap;
     bool m_changingItemSelection;
+    bool m_movingItem;
+    QList<QObject*> m_defferedItems;
 };
 
 } //namespace LimeReport

@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -46,6 +46,7 @@ public:
     void setPrintOnFirstPage(bool printOnFirstPage);
     bool printOnLastPage() const;
     void setPrintOnLastPage(bool printOnLastPage);
+    bool isHeader() const{return true;}
 protected:
     virtual BaseDesignIntf* createSameTypeItem(QObject* owner=0, QGraphicsItem* parent=0);
     QColor bandColor() const;

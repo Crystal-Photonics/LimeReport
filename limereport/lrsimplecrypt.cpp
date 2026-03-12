@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -28,6 +28,8 @@
  *   GNU General Public License for more details.                          *
  ****************************************************************************/
 #include "lrsimplecrypt.h"
+
+namespace LimeReport {
 
 #if defined(LP64) || defined(_LP64) || defined(__LP64__)
 typedef unsigned  int WORD; /* Should be 32-bit = 4 bytes        */
@@ -62,8 +64,6 @@ void initPt(WTB& pt, QByteArray::Iterator* it, QByteArray::Iterator end){
     }
 }
 
-namespace LimeReport {
-
 class ChipperPrivate{
     friend class Chipper;
 public:
@@ -73,7 +73,7 @@ private:
     void RC5_SETUP(const char *K);
     void RC5_ENCRYPT(WORD *pt, WORD *ct);
     void RC5_DECRYPT(WORD *ct, WORD *pt);
-    WORD S[26];
+    WORD S[26] = {0};
     bool m_prepared;
 };
 
@@ -115,7 +115,7 @@ QByteArray Chipper::cryptString(QString value)
 {
     QByteArray buff;
     QByteArray result;
-    buff += value;
+    buff += value.toUtf8();
     WTB pt, ct, prior;
 
     if (!d->isPrepared())

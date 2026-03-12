@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -67,13 +67,26 @@ QString replaceHTMLSymbols(const QString &value)
     return result;
 }
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 1))
 QVector<QString> normalizeCaptures(const QRegExp& reg){
+#else
+QVector<QString> normalizeCaptures(const QRegularExpressionMatch &reg){
+#endif
     QVector<QString> result;
     foreach (QString cap, reg.capturedTexts()) {
         if (!cap.isEmpty())
             result.append(cap);
     }
     return result;
+}
+
+bool isColorDark(QColor color){
+    qreal darkness = 1-(0.299*color.red() + 0.587*color.green() + 0.114*color.blue())/255;
+    if(darkness<0.5){
+        return false;
+    } else {
+        return true;
+    }
 }
 
 } //namespace LimeReport

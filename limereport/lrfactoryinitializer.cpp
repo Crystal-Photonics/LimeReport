@@ -15,9 +15,15 @@
 #include "items/lrhorizontallayout.h"
 #include "items/lrimageitem.h"
 #include "items/lrshapeitem.h"
+#include "items/lrchartitem.h"
 #include "lrdesignelementsfactory.h"
+#ifdef HAVE_SVG
+#include "items/lrsvgitem.h"
+#include "objectinspector/propertyItems/lrsvgpropitem.h"
+#endif
 
 
+#ifdef HAVE_REPORT_DESIGNER
 #include "objectinspector/lrobjectpropitem.h"
 #include "objectinspector/propertyItems/lrboolpropitem.h"
 #include "objectinspector/propertyItems/lrcolorpropitem.h"
@@ -34,17 +40,26 @@
 #include "objectinspector/propertyItems/lrstringpropitem.h"
 #include "items/lralignpropitem.h"
 #include "items/lrsubitemparentpropitem.h"
+#endif
 
 #include "serializators/lrxmlbasetypesserializators.h"
 #include "serializators/lrxmlqrectserializator.h"
 #include "serializators/lrxmlserializatorsfactory.h"
 
+#include "lrexportersfactory.h"
+#include "lrexporterintf.h"
+#include "exporters/lrpdfexporter.h"
+
 void initResources(){
     Q_INIT_RESOURCE(report);
+#ifdef HAVE_REPORT_DESIGNER
     Q_INIT_RESOURCE(lobjectinspector);
     Q_INIT_RESOURCE(lrdatabrowser);
     Q_INIT_RESOURCE(items);
     Q_INIT_RESOURCE(lrscriptbrowser);
+    Q_INIT_RESOURCE(translationeditor);
+    Q_INIT_RESOURCE(dialogdesigner);
+#endif
 }
 
 namespace LimeReport{
@@ -101,17 +116,27 @@ BaseDesignIntf * createBarcodeItem(QObject* owner, LimeReport::BaseDesignIntf*  
 }
 #endif
 
+#ifdef HAVE_SVG
+BaseDesignIntf* createSVGItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
+    return new SVGItem(owner,parent);
+}
+#endif
+
 BaseDesignIntf* createHLayout(QObject *owner, LimeReport::BaseDesignIntf  *parent)
 {
     return new HorizontalLayout(owner, parent);
 }
 
-BaseDesignIntf * createImageItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
+BaseDesignIntf* createImageItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
     return new ImageItem(owner,parent);
 }
 
-BaseDesignIntf * createShapeItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
+BaseDesignIntf* createShapeItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
     return new ShapeItem(owner,parent);
+}
+
+BaseDesignIntf* createChartItem(QObject* owner, LimeReport::BaseDesignIntf*  parent){
+    return new ChartItem(owner,parent);
 }
 
 void initReportItems(){
@@ -128,6 +153,7 @@ void initReportItems(){
                 createBarcodeItem
     );
 #endif
+
     DesignElementsFactory::instance().registerCreator(
                 "HLayout",
                 LimeReport::ItemAttribs(QObject::tr("HLayout"), LimeReport::Const::bandTAG),
@@ -136,8 +162,20 @@ void initReportItems(){
     DesignElementsFactory::instance().registerCreator(
                          "ImageItem", LimeReport::ItemAttribs(QObject::tr("Image Item"),"Item"), createImageItem
     );
+
+#ifdef HAVE_SVG
+    DesignElementsFactory::instance().registerCreator(
+        "SVGItem",
+        LimeReport::ItemAttribs(QObject::tr("SVG Item"),"Item"),
+        createSVGItem
+        );
+#endif
+
     DesignElementsFactory::instance().registerCreator(
                          "ShapeItem", LimeReport::ItemAttribs(QObject::tr("Shape Item"),"Item"), createShapeItem
+    );
+    DesignElementsFactory::instance().registerCreator(
+                         "ChartItem", LimeReport::ItemAttribs(QObject::tr("Chart Item"),"Item"), createChartItem
     );
     DesignElementsFactory::instance().registerCreator(
             "Data",
@@ -198,6 +236,8 @@ void initReportItems(){
 
 }
 
+#ifdef HAVE_REPORT_DESIGNER
+
 ObjectPropItem * createBoolPropItem(
     QObject *object, LimeReport::ObjectPropItem::ObjectsList* objects, const QString& name, const QString& displayName, const QVariant& data, LimeReport::ObjectPropItem* parent, bool readonly)
 {
@@ -254,6 +294,14 @@ ObjectPropItem * createImagePropItem(
     return new LimeReport::ImagePropItem(object, objects, name, displayName, data, parent, readonly);
 }
 
+#ifdef HAVE_SVG
+ObjectPropItem * createSVGPropItem(
+    QObject *object, LimeReport::ObjectPropItem::ObjectsList* objects, const QString& name, const QString& displayName, const QVariant& data, LimeReport::ObjectPropItem* parent, bool readonly)
+{
+    return new LimeReport::SvgPropItem(object, objects, name, displayName, data, parent, readonly);
+}
+#endif
+
 ObjectPropItem * createIntPropItem(
     QObject *object, LimeReport::ObjectPropItem::ObjectsList* objects, const QString& name, const QString& displayName, const QVariant& data, LimeReport::ObjectPropItem* parent, bool readonly)
 {
@@ -275,7 +323,7 @@ ObjectPropItem * createReqtItem(
 ObjectPropItem * createReqtMMItem(
     QObject*object, LimeReport::ObjectPropItem::ObjectsList* objects, const QString& name, const QString& displayName, const QVariant& data, LimeReport::ObjectPropItem* parent, bool readonly
 ){
-    return new LimeReport::RectMMPropItem(object, objects, name, displayName, data, parent, readonly);
+    return new LimeReport::RectUnitPropItem(object, objects, name, displayName, data, parent, readonly);
 }
 
 ObjectPropItem * createStringPropItem(
@@ -317,6 +365,12 @@ void initObjectInspectorProperties()
             LimeReport::APropIdent("field","LimeReport::ImageItem"),QObject::tr("field"),createFieldPropItem
     );
     ObjectPropFactory::instance().registerCreator(
+        LimeReport::APropIdent("datasource","LimeReport::SVGItem"),QObject::tr("datasource"),createDatasourcePropItem
+        );
+    ObjectPropFactory::instance().registerCreator(
+        LimeReport::APropIdent("field","LimeReport::SVGItem"),QObject::tr("field"),createFieldPropItem
+        );
+    ObjectPropFactory::instance().registerCreator(
         LimeReport::APropIdent("enum",""),QObject::tr("enum"),createEnumPropItem
     );
     ObjectPropFactory::instance().registerCreator(
@@ -331,6 +385,11 @@ void initObjectInspectorProperties()
     ObjectPropFactory::instance().registerCreator(
                 LimeReport::APropIdent("QImage",""),QObject::tr("QImage"),createImagePropItem
     );
+#ifdef HAVE_SVG
+    ObjectPropFactory::instance().registerCreator(
+        LimeReport::APropIdent("image","LimeReport::SVGItem"),QObject::tr("image"),createSVGPropItem
+    );
+#endif
     ObjectPropFactory::instance().registerCreator(
                 LimeReport::APropIdent("int",""),QObject::tr("int"),createIntPropItem
     );
@@ -360,7 +419,7 @@ void initObjectInspectorProperties()
     );
 
 }
-
+#endif
 SerializatorIntf * createIntSerializator(QDomDocument *doc, QDomElement *node){
     return new LimeReport::XmlIntSerializator(doc,node);
 }
@@ -425,6 +484,19 @@ void initSerializators()
     XMLAbstractSerializatorFactory::instance().registerCreator("QVariant", createQVariantSerializator);
     XMLAbstractSerializatorFactory::instance().registerCreator("QRect", createQRectSerializator);
     XMLAbstractSerializatorFactory::instance().registerCreator("QRectF", createQRectSerializator);
+}
+
+LimeReport::ReportExporterInterface* createPDFExporter(ReportEnginePrivate* parent){
+    return new LimeReport::PDFExporter(parent);
+}
+
+void initExporters()
+{
+    ExportersFactory::instance().registerCreator(
+                "PDF",
+                LimeReport::ExporterAttribs(QObject::tr("Export to PDF"), "PDFExporter"),
+                createPDFExporter
+    );
 }
 
 } //namespace LimeReport

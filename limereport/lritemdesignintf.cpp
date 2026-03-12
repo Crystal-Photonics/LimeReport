@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -35,7 +35,9 @@
 #include "lrglobal.h"
 
 #include <QDebug>
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 1))
 #include <QRegExp>
+#endif
 #include <QVariant>
 
 namespace LimeReport{
@@ -66,11 +68,13 @@ void ItemDesignIntf::setItemLocation(LocationType location)
             } else {
                 if (scene()){
                     PageItemDesignIntf* page = dynamic_cast<PageDesignIntf*>(scene())->pageItem();
-                    QPointF parentPos = page->mapFromItem(parentItem(),x(),y());
-                    setParentItem(page);
-                    setParent(page);
-                    setPos(parentPos);
-                    emit itemLocationChanged(this, page);
+                    if (page){
+                        QPointF parentPos = page->mapFromItem(parentItem(),x(),y());
+                        setParentItem(page);
+                        setParent(page);
+                        setPos(parentPos);
+                        emit itemLocationChanged(this, page);
+                    }
                 }
             }
             notify("locationType",oldValue,location);
@@ -117,5 +121,21 @@ void ItemDesignIntf::initFlags()
 
 Spacer::Spacer(QObject *owner, QGraphicsItem *parent)
     :ItemDesignIntf("Spacer",owner,parent){}
+
+QMap<QString, QString> ContentItemDesignIntf::getStringForTranslation(){
+    QMap<QString,QString>map;
+    map.insert("content",content());
+    return map;
+}
+
+bool ContentItemDesignIntf::isContentBackedUp() const
+{
+    return m_contentBackedUp;
+}
+
+void ContentItemDesignIntf::setContentBackedUp(bool contentBackedUp)
+{
+    m_contentBackedUp = contentBackedUp;
+}
 
 }// namespace LimeReport

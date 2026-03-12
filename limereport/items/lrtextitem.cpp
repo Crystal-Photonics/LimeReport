@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -29,7 +29,6 @@
  ****************************************************************************/
 #include <QtGui>
 #include <QTextLayout>
-#include <QtScript/QScriptEngine>
 #include <QLocale>
 #include <QMessageBox>
 #include <math.h>
@@ -59,7 +58,8 @@ namespace LimeReport{
 
 TextItem::TextItem(QObject *owner, QGraphicsItem *parent)
     : ContentItemDesignIntf(xmlTag,owner,parent), m_angle(Angle0), m_trimValue(true), m_allowHTML(false),
-      m_allowHTMLInFields(false), m_followTo(""), m_follower(0), m_textIndent(0), m_textLayoutDirection(Qt::LayoutDirectionAuto)
+      m_allowHTMLInFields(false), m_replaceCarriageReturns(false), m_followTo(""), m_follower(0), m_textIndent(0),
+      m_textLayoutDirection(Qt::LayoutDirectionAuto), m_hideIfEmpty(false), m_fontLetterSpacing(0)
 {
     PageItemDesignIntf* pageItem = dynamic_cast<PageItemDesignIntf*>(parent);
     BaseDesignIntf* parentItem = dynamic_cast<BaseDesignIntf*>(parent);
@@ -76,10 +76,6 @@ TextItem::TextItem(QObject *owner, QGraphicsItem *parent)
 }
 
 TextItem::~TextItem(){}
-
-int TextItem::fakeMarginSize() const{
-    return marginSize()+5;
-}
 
 void TextItem::preparePopUpMenu(QMenu &menu)
 {
@@ -105,6 +101,18 @@ void TextItem::preparePopUpMenu(QMenu &menu)
     action->setCheckable(true);
     action->setChecked(stretchToMaxHeight());
 
+    action = menu.addAction(tr("Transparent"));
+    action->setCheckable(true);
+    action->setChecked(backgroundMode() == TransparentMode);
+
+    action = menu.addAction(tr("Watermark"));
+    action->setCheckable(true);
+    action->setChecked(isWatermark());
+
+    action = menu.addAction(tr("Hide if empty"));
+    action->setCheckable(true);
+    action->setChecked(hideIfEmpty());
+
 }
 
 void TextItem::processPopUpAction(QAction *action)
@@ -112,18 +120,36 @@ void TextItem::processPopUpAction(QAction *action)
     if (action->text().compare(tr("Edit")) == 0){
         this->showEditorDialog();
     }
-    if (action->text().compare(tr("Auto height")) == 0){
-        page()->setPropertyToSelectedItems("autoHeight",action->isChecked());
+    if (page()){
+        if (action->text().compare(tr("Auto height")) == 0){
+            page()->setPropertyToSelectedItems("autoHeight",action->isChecked());
+        }
+        if (action->text().compare(tr("Allow HTML")) == 0){
+            page()->setPropertyToSelectedItems("allowHTML",action->isChecked());
+        }
+        if (action->text().compare(tr("Allow HTML in fields")) == 0){
+            page()->setPropertyToSelectedItems("allowHTMLInFields",action->isChecked());
+        }
+        if (action->text().compare(tr("Stretch to max height")) == 0){
+            page()->setPropertyToSelectedItems("stretchToMaxHeight",action->isChecked());
+        }
     }
-    if (action->text().compare(tr("Allow HTML")) == 0){
-        page()->setPropertyToSelectedItems("allowHTML",action->isChecked());
+    if (action->text().compare(tr("Transparent")) == 0){
+        if (action->isChecked()){
+            setProperty("backgroundMode",TransparentMode);
+        } else {
+            setProperty("backgroundMode",OpaqueMode);
+        }
     }
-    if (action->text().compare(tr("Allow HTML in fields")) == 0){
-        page()->setPropertyToSelectedItems("allowHTMLInFields",action->isChecked());
+    if (action->text().compare(tr("Watermark")) == 0){
+        page()->setPropertyToSelectedItems("watermark",action->isChecked());
     }
-    if (action->text().compare(tr("Stretch to max height")) == 0){
-        page()->setPropertyToSelectedItems("stretchToMaxHeight",action->isChecked());
+
+    if (action->text().compare(tr("Hide if empty")) == 0){
+        page()->setPropertyToSelectedItems("hideIfEmpty",action->isChecked());
     }
+
+    ContentItemDesignIntf::processPopUpAction(action);
 }
 
 void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, QWidget* widget) {
@@ -150,7 +176,7 @@ void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, Q
     qreal hOffset = 0, vOffset = 0;
     switch (m_angle){
         case Angle0:
-            hOffset = fakeMarginSize();
+            hOffset = marginSize();
             if ((tmpSize.height() > 0) && (m_alignment & Qt::AlignVCenter)){
                 vOffset = tmpSize.height() / 2;
             }
@@ -159,8 +185,8 @@ void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, Q
             painter->translate(hOffset,vOffset);
         break;
         case Angle90:
-            hOffset = width() - fakeMarginSize();
-            vOffset = fakeMarginSize();
+            hOffset = width() - marginSize();
+            vOffset = marginSize();
             if (m_alignment & Qt::AlignVCenter){
                 hOffset = (width() - text->size().height()) / 2 + text->size().height();
             }
@@ -172,8 +198,8 @@ void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, Q
             painter->rotate(90);
         break;
         case Angle180:
-            hOffset = width() - fakeMarginSize();
-            vOffset = height() - fakeMarginSize();
+            hOffset = width() - marginSize();
+            vOffset = height() - marginSize();
             if ((tmpSize.width()>0) && (m_alignment & Qt::AlignVCenter)){
                 vOffset = tmpSize.height() / 2+ text->size().height();
             }
@@ -184,8 +210,8 @@ void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, Q
             painter->rotate(180);
         break;
         case Angle270:
-            hOffset = fakeMarginSize();
-            vOffset = height()-fakeMarginSize();
+            hOffset = marginSize();
+            vOffset = height()-marginSize();
             if (m_alignment & Qt::AlignVCenter){
                 hOffset = (width() - text->size().height())/2;
             }
@@ -246,10 +272,6 @@ void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, Q
     BaseDesignIntf::paint(painter, style, widget);
 }
 
-QString TextItem::content() const{
-    return m_strText;
-}
-
 void TextItem::Init()
 {
     m_autoWidth = NoneAutoWidth;
@@ -269,14 +291,8 @@ void TextItem::setContent(const QString &value)
 {
     if (m_strText.compare(value)!=0){
         QString oldValue = m_strText;
-        if (m_trimValue)
-            m_strText=value.trimmed();
-        else
-            m_strText=value;
 
-//        if (itemMode() == DesignMode && (autoHeight())){
-//            initTextSizes();
-//        }
+        m_strText = value;
 
         if (!isLoading()){
             if (autoHeight() || autoWidth() || hasFollower())
@@ -287,15 +303,21 @@ void TextItem::setContent(const QString &value)
     }
 }
 
+QString TextItem::content() const{
+    return m_strText;
+}
+
 void TextItem::updateItemSize(DataSourceManager* dataManager, RenderPass pass, int maxHeight)
 {
+
     if (isNeedExpandContent())
         expandContent(dataManager, pass);
+
     if (!isLoading() && (autoHeight() || autoWidth() || hasFollower()) )
         initTextSizes();
 
     if (m_textSize.width()>width() && ((m_autoWidth==MaxWordLength)||(m_autoWidth==MaxStringLength))){
-        setWidth(m_textSize.width() + fakeMarginSize()*2);
+        setWidth(m_textSize.width() + marginSize()*2);
     }
 
     if (m_textSize.height()>height()) {
@@ -307,6 +329,7 @@ void TextItem::updateItemSize(DataSourceManager* dataManager, RenderPass pass, i
         }
     }
     BaseDesignIntf::updateItemSize(dataManager, pass, maxHeight);
+    if (isEmpty() && hideIfEmpty()) setVisible(false);
 }
 
 void TextItem::updateLayout()
@@ -326,17 +349,24 @@ void TextItem::updateLayout()
 }
 
 bool TextItem::isNeedExpandContent() const
-{
+{   
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 1))
     QRegExp rx("$*\\{[^{]*\\}");
-    return content().contains(rx);
+#else
+    bool result = false;
+    QRegularExpression rx("\\$*\\{[^{]*\\}");
+    result = content().contains(rx) || isContentBackedUp();
+    return result;
+#endif
+    return content().contains(rx) || isContentBackedUp();
 }
 
-QString TextItem::replaceBR(QString text)
+QString TextItem::replaceBR(QString text) const
 {
     return text.replace("<br/>","\n");
 }
 
-QString TextItem::replaceReturns(QString text)
+QString TextItem::replaceReturns(QString text) const
 {
     QString result = text.replace("\r\n","<br/>");
     result = result.replace("\n","<br/>");
@@ -346,20 +376,21 @@ QString TextItem::replaceReturns(QString text)
 void TextItem::setTextFont(TextPtr text, const QFont& value) const {
     text->setDefaultFont(value);
     if ((m_angle==Angle0)||(m_angle==Angle180)){
-        text->setTextWidth(rect().width()-fakeMarginSize()*2);
+        text->setTextWidth(rect().width()-marginSize()*2);
     } else {
-        text->setTextWidth(rect().height()-fakeMarginSize()*2);
+        text->setTextWidth(rect().height()-marginSize()*2);
     }
 }
 
 void TextItem::adaptFontSize(TextPtr text) const{
     QFont _font = transformToSceneFont(font());
     do{
+//        qApp->processEvents();
         setTextFont(text,_font);
         if (_font.pixelSize()>2)
             _font.setPixelSize(_font.pixelSize()-1);
         else break;
-    } while(text->size().height()>this->height() || text->size().width()>(this->width()) - fakeMarginSize() * 2);
+    } while(text->size().height()>this->height() || text->size().width()>(this->width()) - marginSize() * 2);
 }
 
 int TextItem::underlineLineSize() const
@@ -415,7 +446,11 @@ QString TextItem::formatNumber(const double value)
 
     if (m_format.contains("%"))
     {
+#if QT_VERSION < 0x050500
         str.sprintf(m_format.toStdString().c_str(), value);
+#else
+        str.asprintf(m_format.toStdString().c_str(), value);
+#endif
         str = str.replace(",", QLocale::system().groupSeparator());
         str = str.replace(".", QLocale::system().decimalPoint());
     }
@@ -449,30 +484,47 @@ QString TextItem::formatFieldValue()
         }
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     switch (value.type()) {
-    case QVariant::Date:
-    case QVariant::DateTime:
-        return formatDateTime(value.toDateTime());
-    case QVariant::Double:
-        return formatNumber(value.toDouble());
-    default:
-        return value.toString();
+        case QVariant::Date:
+        case QVariant::DateTime:
+            return formatDateTime(value.toDateTime());
+        case QVariant::Double:
+            return formatNumber(value.toDouble());
+        default:
+            return value.toString();
     }
+#else
+    switch (value.typeId()) {
+        case QMetaType::QDate:
+        case QMetaType::QDateTime:
+            return formatDateTime(value.toDateTime());
+        case QMetaType::Double:
+            return formatNumber(value.toDouble());
+        default:
+            return value.toString();
+    }
+#endif
+
 }
 
 TextItem::TextPtr TextItem::textDocument() const
 {
     TextPtr text(new QTextDocument);
+    QString content = m_trimValue ? m_strText.trimmed() : m_strText;
 
     if (allowHTML())
-        text->setHtml(m_strText);
+        if (isReplaceCarriageReturns()){
+            text->setHtml(replaceReturns(content));
+        } else {
+            text->setHtml(content);
+        }
     else
-        text->setPlainText(m_strText);
+        text->setPlainText(content);
 
     QTextOption to;
     to.setAlignment(m_alignment);
     to.setTextDirection(m_textLayoutDirection);
-    //to.setTextDirection(QApplication::layoutDirection());
 
     if (m_autoWidth!=MaxStringLength)
         if (m_adaptFontToSize && (!(m_autoHeight || m_autoWidth)))
@@ -513,6 +565,51 @@ TextItem::TextPtr TextItem::textDocument() const
 
 }
 
+int TextItem::fontLetterSpacing() const
+{
+    return m_fontLetterSpacing;
+}
+
+void TextItem::setFontLetterSpacing(int value)
+{
+    if (m_fontLetterSpacing != value){
+        int oldValue = m_fontLetterSpacing;
+        m_fontLetterSpacing = value;
+        QFont curFont = font();
+        curFont.setLetterSpacing(QFont::AbsoluteSpacing, m_fontLetterSpacing);
+        setFont(curFont);
+        notify("fontLetterSpacing", oldValue, value);
+    }
+}
+
+bool TextItem::hideIfEmpty() const
+{
+    return m_hideIfEmpty;
+}
+
+void TextItem::setHideIfEmpty(bool hideEmpty)
+{
+    if (m_hideIfEmpty != hideEmpty){
+        m_hideIfEmpty = hideEmpty;
+        notify("hideIfEmpty",!m_hideIfEmpty, m_hideIfEmpty);
+    }
+}
+
+bool TextItem::isReplaceCarriageReturns() const
+{
+    return m_replaceCarriageReturns;
+}
+
+void TextItem::setReplaceCarriageReturns(bool replaceCarriageReturns)
+{
+    if (replaceCarriageReturns != m_replaceCarriageReturns){
+        m_replaceCarriageReturns = replaceCarriageReturns;
+        update();
+        notify("replaceCRwithBR",!replaceCarriageReturns, replaceCarriageReturns);
+    }
+
+}
+
 qreal TextItem::textIndent() const
 {
     return m_textIndent;
@@ -541,6 +638,15 @@ void TextItem::setTextLayoutDirection(const Qt::LayoutDirection &textLayoutDirec
         update();
         notify("textLayoutDirection",oldValue,int(textLayoutDirection));
     }
+}
+
+void TextItem::setWatermark(bool watermark)
+{
+    if (watermark){
+        setBackgroundMode(TransparentMode);
+    }
+    BaseDesignIntf::setWatermark(watermark);
+
 }
 
 
@@ -684,6 +790,7 @@ void TextItem::setTrimValue(bool value)
 {
     bool oldValue = m_trimValue;
     m_trimValue = value;
+    update();
     notify("trimValue",oldValue,value);
 }
 
@@ -722,19 +829,39 @@ void TextItem::setAlignment(Qt::Alignment value)
 void TextItem::expandContent(DataSourceManager* dataManager, RenderPass pass)
 {
     QString context=content();
-    ExpandType expandType = (allowHTML() && !allowHTMLInFields())?ReplaceHTMLSymbols:NoEscapeSymbols;
+    foreach (QString variableName, dataManager->variableNamesByRenderPass(SecondPass)) {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 1))
+        QRegExp rx(QString(Const::NAMED_VARIABLE_RX).arg(variableName));
+#else
+        QRegularExpression rx = getNamedVariableRegEx(variableName);
+#endif
+        if (context.contains(rx) && pass == FirstPass){
+            backupContent();
+            break;
+        }
+    }
+
+    ExpandType expandType = (allowHTML() && !allowHTMLInFields()) ? ReplaceHTMLSymbols : NoEscapeSymbols;
     switch(pass){
     case FirstPass:
-        context=expandUserVariables(context, pass, expandType, dataManager);
-        context=expandScripts(context, dataManager);
-        context=expandDataFields(context, expandType, dataManager);
+        if (!fillInSecondPass()){
+            context=expandUserVariables(context, pass, expandType, dataManager);
+            context=expandScripts(context, dataManager);
+            context=expandDataFields(context, expandType, dataManager);
+        } else {
+            context=expandDataFields(context, expandType, dataManager);
+        }
         break;
-    case SecondPass:;
+    case SecondPass:
+        if (isContentBackedUp()) {
+            restoreContent();
+            context = content();
+        }
         context=expandUserVariables(context, pass, expandType, dataManager);
         context=expandScripts(context, dataManager);
     }
 
-    if (expandType == NoEscapeSymbols && !m_varValue.isNull() &&m_valueType!=Default) {
+    if (expandType == NoEscapeSymbols && !m_varValue.isNull() &&m_valueType != Default) {
         setContent(formatFieldValue());
     } else {
         setContent(context);
@@ -882,8 +1009,9 @@ void TextItem::setTextItemFont(QFont value)
 {
     if (font()!=value){
         QFont oldValue = font();
+        value.setLetterSpacing(QFont::AbsoluteSpacing, m_fontLetterSpacing);
         setFont(value);
-        update();
+        if (!isLoading()) update();
         notify("font",oldValue,value);
     }
 }

@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -160,7 +160,10 @@ QString AlignmentItemEditor::displayValue() const
 
 void AlignmentItemEditor::setPropertyValue(QVariant value)
 {
-    ObjectPropItem::setPropertyValue(extractAcceptableValue(value.toInt())[0]);
+    QVector<int> _accpepttableValueList= extractAcceptableValue(value.toInt());
+    if(_accpepttableValueList.isEmpty()) return;
+
+    ObjectPropItem::setPropertyValue(_accpepttableValueList[0]);
 }
 
 }

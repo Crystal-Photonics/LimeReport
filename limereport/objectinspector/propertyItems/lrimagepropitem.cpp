@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -48,12 +48,12 @@ QWidget* ImagePropItem::createProperyEditor(QWidget *parent) const
 
 QString ImagePropItem::displayValue() const
 {
-    return (propertyValue().isNull())?"":"Picture";
+    return (propertyValue().isNull()) ? "" : QObject::tr("image");
 }
 
 void ImagePropItem::setPropertyEditorData(QWidget *propertyEditor, const QModelIndex &) const
 {
-    ImageEditor *editor =qobject_cast<ImageEditor*>(propertyEditor);
+    ImageEditor *editor = qobject_cast<ImageEditor*>(propertyEditor);
     editor->setImage(propertyValue().value<QImage>());
 }
 

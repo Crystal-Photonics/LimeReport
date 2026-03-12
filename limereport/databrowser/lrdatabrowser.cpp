@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -46,7 +46,6 @@
 #include "lrconnectiondialog.h"
 #include "lrreportengine_p.h"
 #include "lrvariabledialog.h"
-#include "lrdatabrowsertree.h"
 
 namespace LimeReport{
 
@@ -63,6 +62,9 @@ DataBrowser::DataBrowser(QWidget *parent) :
     connect(ui->deleteDataSource,SIGNAL(clicked()),this,SLOT(slotDeleteDatasource()));
     connect(ui->changeConnection,SIGNAL(clicked()),this,SLOT(slotChangeConnection()));
     connect(ui->pbConnect,SIGNAL(clicked()),this,SLOT(slotChangeConnectionState()));
+
+    int margin = Const::DOCKWIDGET_MARGINS;
+    ui->verticalLayout_2->setContentsMargins(margin, margin, margin, margin);
 
     ui->dataTree->setHeaderLabel(tr("Datasources"));
     ui->pbConnect->setEnabled(false);
@@ -96,31 +98,10 @@ void DataBrowser::slotAddConnection()
 void DataBrowser::slotSQLEditingFinished(SQLEditResult result)
 {
     if (result.dialogMode==SQLEditDialog::AddMode) {
-        switch (result.resultMode) {
-        case SQLEditResult::Query:
-            addQuery(result);
-            break;
-        case SQLEditResult::SubQuery:
-            addSubQuery(result);
-            break;
-        case SQLEditResult::SubProxy:
-            addProxy(result);
-        default:
-            break;
-        }
+        addDatasource(result);
     } else {
-        switch(result.resultMode){
-        case SQLEditResult::Query:
-            changeQuery(result);
-            break;
-        case SQLEditResult::SubQuery:
-            changeSubQuery(result);
-            break;
-        case SQLEditResult::SubProxy:
-            changeProxy(result);
-        }
+        applyChanges(result);
     }
-
     updateDataTree();
 }
 
@@ -237,7 +218,7 @@ void DataBrowser::updateVariablesTree()
         }
     }
 
-    foreach(QString variableName,m_report->dataManager()->namesOfUserVariables()){
+    foreach(QString variableName,m_report->dataManager()->userVariableNames()){
         if (!m_report->dataManager()->variableNames().contains(variableName)){
             QStringList values;
             values<<variableName+"  ["+m_report->dataManager()->variable(variableName).toString()+"]"
@@ -277,7 +258,7 @@ QSettings *DataBrowser::settings()
     if (m_settings){
         return m_settings;
     } else {
-        m_settings = new QSettings("LimeReport",QApplication::applicationName());
+        m_settings = new QSettings("LimeReport",QCoreApplication::applicationName());
         m_ownedSettings = true;
         return m_settings;
     }
@@ -433,7 +414,7 @@ void DataBrowser::initConnections()
             connections.append(connectionName);
         }
     }
-    qSort(connections);
+    std::sort(connections.begin(), connections.end());
     foreach (QString connectionName, connections) {
         QTreeWidgetItem *item=new QTreeWidgetItem(
             ui->dataTree,
@@ -463,7 +444,7 @@ void DataBrowser::initConnections()
 //    }
 
 //    connections = m_report->dataManager()->connectionNames();
-//    qSort(connections);
+//    std::sort(connections);
 //    foreach(QString connectionName,connectionName){
 //        if (!QSqlDatabase::contains(connectionName)){
 //            QTreeWidgetItem *item=new QTreeWidgetItem(
@@ -617,8 +598,8 @@ void DataBrowser::changeQuery(SQLEditResult result)
 {
     try {
         m_report->dataManager()->removeDatasource(result.oldDatasourceName);
-        m_report->dataManager()->addQuery(result.datasourceName, result.sql, result.connectionName);
-    }catch(ReportError &exception){
+        addQuery(result);
+    } catch(ReportError &exception){
         qDebug()<<exception.what();
     }
 }
@@ -636,8 +617,8 @@ void DataBrowser::changeSubQuery(SQLEditResult result)
 {
     try {
         m_report->dataManager()->removeDatasource(result.oldDatasourceName);
-        m_report->dataManager()->addSubQuery(result.datasourceName, result.sql, result.connectionName, result.masterDatasource);
-    }catch(ReportError &exception){
+        addSubQuery(result);
+    } catch(ReportError &exception){
         qDebug()<<exception.what();
     }
 }
@@ -655,22 +636,110 @@ void DataBrowser::changeProxy(SQLEditResult result)
 {
     try {
         m_report->dataManager()->removeDatasource(result.oldDatasourceName);
-        m_report->dataManager()->addProxy(result.datasourceName,result.masterDatasource,result.childDataSource,result.fieldMap);
+        addProxy(result);
     } catch(ReportError &exception){
         qDebug()<<exception.what();
     }
+}
+
+void DataBrowser::addCSV(SQLEditResult result)
+{
+    try {
+        m_report->dataManager()->addCSV(
+            result.datasourceName,
+            result.csv,
+            result.separator,
+            result.firstRowIsHeader
+        );
+    } catch(ReportError &exception){
+        qDebug()<<exception.what();
+    }
+}
+
+void DataBrowser::changeCSV(SQLEditResult result)
+{
+    try {
+        m_report->dataManager()->removeDatasource(result.oldDatasourceName);
+        addCSV(result);
+    } catch(ReportError &exception){
+        qDebug()<<exception.what();
+    }
+}
+
+SQLEditResult::ResultMode DataBrowser::currentDatasourceType(const QString& datasourceName)
+{
+    if (m_report->dataManager()->isQuery(datasourceName)) return SQLEditResult::Query;
+    if (m_report->dataManager()->isSubQuery(datasourceName)) return SQLEditResult::SubQuery;
+    if (m_report->dataManager()->isProxy(datasourceName)) return SQLEditResult::SubProxy;
+    if (m_report->dataManager()->isCSV(datasourceName)) return SQLEditResult::CSVText;
+    return SQLEditResult::Undefined;
+}
+
+
+void DataBrowser::applyChanges(SQLEditResult result)
+{
+    if (result.resultMode == currentDatasourceType(result.oldDatasourceName)){
+        switch(result.resultMode){
+            case SQLEditResult::Query:
+                changeQuery(result);
+                break;
+            case SQLEditResult::SubQuery:
+                changeSubQuery(result);
+                break;
+            case SQLEditResult::SubProxy:
+                changeProxy(result);
+                break;
+            case SQLEditResult::CSVText:
+                changeCSV(result);
+                break;
+            default: break;
+        }
+    } else {
+        removeDatasource(result.oldDatasourceName);
+        addDatasource(result);
+    }
+    activateItem(result.datasourceName, DataBrowserTree::Table);
+}
+
+void DataBrowser::addDatasource(SQLEditResult result)
+{
+    switch (result.resultMode) {
+        case SQLEditResult::Query:
+            addQuery(result);
+            break;
+        case SQLEditResult::SubQuery:
+            addSubQuery(result);
+            break;
+        case SQLEditResult::SubProxy:
+            addProxy(result);
+            break;
+        case SQLEditResult::CSVText:
+            addCSV(result);
+            break;
+        default:
+            break;
+    }
+    activateItem(result.datasourceName, DataBrowserTree::Table);
+}
+
+void DataBrowser::activateItem(const QString& name, DataBrowserTree::NodeType type){
+    QTreeWidgetItem* item = findByNameAndType(name, type);
+    if (item)
+        item->treeWidget()->setCurrentItem(item);
 }
 
 void DataBrowser::addConnectionDesc(ConnectionDesc *connection)
 {
     m_report->dataManager()->addConnectionDesc(connection);
     updateDataTree();
+    activateItem(connection->name(), DataBrowserTree::Connection);
 }
 
 void DataBrowser::changeConnectionDesc(ConnectionDesc *connection)
 {
     if (connection->autoconnect()) m_report->dataManager()->connectConnection(connection->name());
     updateDataTree();
+    activateItem(connection->name(), DataBrowserTree::Connection);
 }
 
 bool DataBrowser::checkConnectionDesc(ConnectionDesc *connection)

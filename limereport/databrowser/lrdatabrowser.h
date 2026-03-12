@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This file is part of the Lime Report project                          *
- *   Copyright (C) 2015 by Alexander Arin                                  *
+ *   Copyright (C) 2021 by Alexander Arin                                  *
  *   arin_a@bk.ru                                                          *
  *                                                                         *
  **                   GNU General Public License Usage                    **
@@ -37,6 +37,7 @@
 
 #include "lrreportdesignwidget.h"
 #include "lrsqleditdialog.h"
+#include "lrdatabrowsertree.h"
 
 namespace LimeReport{
 
@@ -105,11 +106,18 @@ private:
     void changeSubQuery(SQLEditResult result);
     void addProxy(SQLEditResult result);
     void changeProxy(SQLEditResult result);
+    void addCSV(SQLEditResult result);
+    void changeCSV(SQLEditResult result);
+
+    SQLEditResult::ResultMode currentDatasourceType(const QString& datasourceName);
+    void applyChanges(SQLEditResult result);
+    void addDatasource(SQLEditResult result);
 
     void addConnectionDesc(ConnectionDesc *connection);
     void changeConnectionDesc(ConnectionDesc *connection);
     bool checkConnectionDesc(ConnectionDesc *connection);
     bool containsDefaultConnection();
+    void activateItem(const QString &name, DataBrowserTree::NodeType type);
 
 private:
     Ui::DataBrowser*           ui;
