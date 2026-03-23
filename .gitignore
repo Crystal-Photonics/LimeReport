@@ -25,6 +25,7 @@ ui_*.h
 Makefile*
 *build-*
 *.qm
+*.ts
 
 # QtCreator
 
@@ -34,3 +35,4 @@ Makefile*
 *.qmlproject.user
 *.qmlproject.user.*
 /build/
+
